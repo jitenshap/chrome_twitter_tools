@@ -1,5 +1,7 @@
 "use strict";
 
+const MEDIA_FILTER_VALUE = "photo";
+
 const RESERVED_PATHS = new Set([
   "about",
   "account",
@@ -51,8 +53,8 @@ function normalizeXUrl(rawUrl) {
     return url.toString();
   }
 
-  if (isProfileMediaPath(url.pathname) && url.searchParams.get("filter") !== "all") {
-    url.searchParams.set("filter", "all");
+  if (isProfileMediaPath(url.pathname) && url.searchParams.get("filter") !== MEDIA_FILTER_VALUE) {
+    url.searchParams.set("filter", MEDIA_FILTER_VALUE);
     return url.toString();
   }
 

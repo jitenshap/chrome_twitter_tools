@@ -2,7 +2,7 @@
   "use strict";
 
   const SETTINGS_KEY = "replaceTitleSuffix";
-  const MEDIA_RELOAD_KEY_PREFIX = "xUserAllRedirectMediaReloaded:";
+  const MEDIA_FILTER_VALUE = "photo";
   const DEFAULT_SETTINGS = {
     replaceTitleSuffix: true
   };
@@ -31,9 +31,12 @@
 
   let replaceTitleSuffix = DEFAULT_SETTINGS.replaceTitleSuffix;
   let titleObserver = null;
+  let mediaTabObserver = null;
   let applyingTitle = false;
   let lastSeenUrl = window.location.href;
   let routeCheckTimer = null;
+  let mediaTabClickTimer = null;
+  let lastMediaMenuRevealUrl = "";
 
   function isProfileRootPath(pathname) {
     const match = pathname.match(/^\/([A-Za-z0-9_]{1,15})\/?$/);
@@ -73,29 +76,17 @@
       return url.toString();
     }
 
-    if (isProfileMediaPath(url.pathname) && url.searchParams.get("filter") !== "all") {
-      url.searchParams.set("filter", "all");
+    if (isProfileMediaPath(url.pathname) && url.searchParams.get("filter") !== MEDIA_FILTER_VALUE) {
+      url.searchParams.set("filter", MEDIA_FILTER_VALUE);
       return url.toString();
     }
 
     return null;
   }
 
-  function isFilteredMediaUrl(rawUrl) {
+  function isPhotoMediaUrl(rawUrl) {
     const url = new URL(rawUrl, window.location.href);
-    return url.hostname === "x.com" && isProfileMediaPath(url.pathname) && url.searchParams.get("filter") === "all";
-  }
-
-  function mediaReloadKey(rawUrl) {
-    return `${MEDIA_RELOAD_KEY_PREFIX}${new URL(rawUrl, window.location.href).toString()}`;
-  }
-
-  function clearMediaReloadFlagIfLeaving(previousUrl, currentUrl) {
-    if (!isFilteredMediaUrl(previousUrl) || previousUrl === currentUrl) {
-      return;
-    }
-
-    window.sessionStorage.removeItem(mediaReloadKey(previousUrl));
+    return url.hostname === "x.com" && isProfileMediaPath(url.pathname) && url.searchParams.get("filter") === MEDIA_FILTER_VALUE;
   }
 
   function redirectCurrentPageIfNeeded() {
@@ -107,18 +98,46 @@
     window.location.replace(nextUrl);
   }
 
-  function reloadFilteredMediaOnceIfNeeded() {
-    if (!isFilteredMediaUrl(window.location.href)) {
+  function isSelectedTab(anchor) {
+    return anchor.getAttribute("aria-selected") === "true" || anchor.getAttribute("role") === "tab" && anchor.getAttribute("tabindex") === "0";
+  }
+
+  function selectPhotoMediaTabIfNeeded() {
+    if (!isPhotoMediaUrl(window.location.href)) {
+      lastMediaMenuRevealUrl = "";
       return;
     }
 
-    const reloadKey = mediaReloadKey(window.location.href);
-    if (window.sessionStorage.getItem(reloadKey)) {
+    const photoTab = document.querySelector('a[href*="/media?filter=photo"], a[href*="/media?filter=photos"]');
+    if (photoTab) {
+      if (!isSelectedTab(photoTab)) {
+        photoTab.click();
+      }
+
       return;
     }
 
-    window.sessionStorage.setItem(reloadKey, "1");
-    window.location.reload();
+    const currentMediaTab = document.querySelector(
+      'a[href$="/media"], a[href*="/media?filter=video"], a[href*="/media?filter=videos"]'
+    );
+    if (!currentMediaTab || lastMediaMenuRevealUrl === window.location.href) {
+      return;
+    }
+
+    lastMediaMenuRevealUrl = window.location.href;
+    currentMediaTab.click();
+    scheduleMediaTabSelection();
+  }
+
+  function scheduleMediaTabSelection() {
+    if (mediaTabClickTimer !== null) {
+      return;
+    }
+
+    mediaTabClickTimer = window.setTimeout(() => {
+      mediaTabClickTimer = null;
+      selectPhotoMediaTabIfNeeded();
+    }, 250);
   }
 
   function rewriteTitle() {
@@ -151,6 +170,20 @@
     rewriteTitle();
   }
 
+  function installMediaTabObserver() {
+    if (mediaTabObserver || !document.documentElement) {
+      return;
+    }
+
+    mediaTabObserver = new MutationObserver(scheduleMediaTabSelection);
+    mediaTabObserver.observe(document.documentElement, {
+      childList: true,
+      subtree: true
+    });
+
+    scheduleMediaTabSelection();
+  }
+
   function scheduleRouteCheck() {
     if (routeCheckTimer !== null) {
       return;
@@ -159,9 +192,9 @@
     routeCheckTimer = window.setTimeout(() => {
       routeCheckTimer = null;
       redirectCurrentPageIfNeeded();
-      reloadFilteredMediaOnceIfNeeded();
+      scheduleMediaTabSelection();
       rewriteTitle();
-    }, 0);
+    }, 100);
   }
 
   function checkForUrlChange() {
@@ -169,9 +202,7 @@
       return;
     }
 
-    const previousUrl = lastSeenUrl;
     lastSeenUrl = window.location.href;
-    clearMediaReloadFlagIfLeaving(previousUrl, window.location.href);
     scheduleRouteCheck();
   }
 
@@ -206,16 +237,18 @@
   }
 
   redirectCurrentPageIfNeeded();
-  reloadFilteredMediaOnceIfNeeded();
+  selectPhotoMediaTabIfNeeded();
   loadSettings();
   installRouteWatcher();
   window.addEventListener("DOMContentLoaded", () => {
     installTitleObserver();
+    installMediaTabObserver();
     scheduleRouteCheck();
   });
 
   if (document.readyState !== "loading") {
     installTitleObserver();
+    installMediaTabObserver();
     scheduleRouteCheck();
   }
 })();

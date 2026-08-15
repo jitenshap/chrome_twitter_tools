@@ -6,9 +6,9 @@
 
 - ユーザーページ直下を `/all` 付きで開きます。
   - `https://x.com/MEMchro` -> `https://x.com/MEMchro/all`
-- メディア欄に `filter=all` を付与します。
-  - `https://x.com/hoppou_erika/media` -> `https://x.com/hoppou_erika/media?filter=all`
-- メディア欄は `filter=all` 付与後に 1 回 reload します。
+- メディア欄に `filter=photo` を付与します。
+  - `https://x.com/hoppou_erika/media` -> `https://x.com/hoppou_erika/media?filter=photo`
+- メディア欄は reload せず、可能な場合は X 側の写真タブを直接選択します。
   - X 側の内部タブ状態が「動画」のまま残ることを避けるためです。
 - X 内のページ遷移後に `webNavigation` と content script で補正します。
   - URL だけでなく表示内容も切り替わるよう、明示的に再遷移します。
@@ -47,8 +47,8 @@
 
 - `https://x.com/MEMchro` を開くと `/all` が付く
 - X の検索サジェストなどからユーザーページへ移動しても `/all` が付く
-- `https://x.com/hoppou_erika/media` を開くと `?filter=all` が付く
-- X 内のリンクからメディア欄へ移動しても `?filter=all` が付き、メディア欄の表示に切り替わる
+- `https://x.com/hoppou_erika/media` を開くと `?filter=photo` が付く
+- X 内のリンクからメディア欄へ移動しても `?filter=photo` が付き、写真タブの表示に切り替わる
 - `ホーム / X` などのページタイトルが `ホーム / Twitter` になる
 
 ## ファイル構成
