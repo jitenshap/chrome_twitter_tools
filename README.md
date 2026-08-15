@@ -8,6 +8,8 @@
   - `https://x.com/MEMchro` -> `https://x.com/MEMchro/all`
 - メディア欄に `filter=all` を付与します。
   - `https://x.com/hoppou_erika/media` -> `https://x.com/hoppou_erika/media?filter=all`
+- メディア欄は `filter=all` 付与後に 1 回 reload します。
+  - X 側の内部タブ状態が「動画」のまま残ることを避けるためです。
 - X 内のページ遷移後に `webNavigation` と content script で補正します。
   - URL だけでなく表示内容も切り替わるよう、明示的に再遷移します。
 - ページタイトル末尾の ` / X` を ` / Twitter` に置き換えます。

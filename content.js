@@ -2,6 +2,7 @@
   "use strict";
 
   const SETTINGS_KEY = "replaceTitleSuffix";
+  const MEDIA_RELOAD_KEY_PREFIX = "xUserAllRedirectMediaReloaded:";
   const DEFAULT_SETTINGS = {
     replaceTitleSuffix: true
   };
@@ -80,6 +81,23 @@
     return null;
   }
 
+  function isFilteredMediaUrl(rawUrl) {
+    const url = new URL(rawUrl, window.location.href);
+    return url.hostname === "x.com" && isProfileMediaPath(url.pathname) && url.searchParams.get("filter") === "all";
+  }
+
+  function mediaReloadKey(rawUrl) {
+    return `${MEDIA_RELOAD_KEY_PREFIX}${new URL(rawUrl, window.location.href).toString()}`;
+  }
+
+  function clearMediaReloadFlagIfLeaving(previousUrl, currentUrl) {
+    if (!isFilteredMediaUrl(previousUrl) || previousUrl === currentUrl) {
+      return;
+    }
+
+    window.sessionStorage.removeItem(mediaReloadKey(previousUrl));
+  }
+
   function redirectCurrentPageIfNeeded() {
     const nextUrl = normalizeXUrl(window.location.href);
     if (!nextUrl) {
@@ -87,6 +105,20 @@
     }
 
     window.location.replace(nextUrl);
+  }
+
+  function reloadFilteredMediaOnceIfNeeded() {
+    if (!isFilteredMediaUrl(window.location.href)) {
+      return;
+    }
+
+    const reloadKey = mediaReloadKey(window.location.href);
+    if (window.sessionStorage.getItem(reloadKey)) {
+      return;
+    }
+
+    window.sessionStorage.setItem(reloadKey, "1");
+    window.location.reload();
   }
 
   function rewriteTitle() {
@@ -127,6 +159,7 @@
     routeCheckTimer = window.setTimeout(() => {
       routeCheckTimer = null;
       redirectCurrentPageIfNeeded();
+      reloadFilteredMediaOnceIfNeeded();
       rewriteTitle();
     }, 0);
   }
@@ -136,7 +169,9 @@
       return;
     }
 
+    const previousUrl = lastSeenUrl;
     lastSeenUrl = window.location.href;
+    clearMediaReloadFlagIfLeaving(previousUrl, window.location.href);
     scheduleRouteCheck();
   }
 
@@ -171,6 +206,7 @@
   }
 
   redirectCurrentPageIfNeeded();
+  reloadFilteredMediaOnceIfNeeded();
   loadSettings();
   installRouteWatcher();
   window.addEventListener("DOMContentLoaded", () => {
