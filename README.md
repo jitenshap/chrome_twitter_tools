@@ -8,8 +8,8 @@
   - `https://x.com/MEMchro` -> `https://x.com/MEMchro/all`
 - メディア欄に `filter=all` を付与します。
   - `https://x.com/hoppou_erika/media` -> `https://x.com/hoppou_erika/media?filter=all`
-- X 内のページ遷移では、可能な限りリンク先をクリック前に補正します。
-  - 取りこぼした場合も `webNavigation` による補正を行います。
+- X 内のページ遷移後に `webNavigation` と content script で補正します。
+  - URL だけでなく表示内容も切り替わるよう、明示的に再遷移します。
 - ページタイトル末尾の ` / X` を ` / Twitter` に置き換えます。
   - `ホーム / X` -> `ホーム / Twitter`
   - この機能はオプション画面でオン/オフできます。
@@ -46,7 +46,7 @@
 - `https://x.com/MEMchro` を開くと `/all` が付く
 - X の検索サジェストなどからユーザーページへ移動しても `/all` が付く
 - `https://x.com/hoppou_erika/media` を開くと `?filter=all` が付く
-- X 内のリンクからメディア欄へ移動しても `?filter=all` が付く
+- X 内のリンクからメディア欄へ移動しても `?filter=all` が付き、メディア欄の表示に切り替わる
 - `ホーム / X` などのページタイトルが `ホーム / Twitter` になる
 
 ## ファイル構成
@@ -56,9 +56,9 @@
 - `background.js`
   - `webNavigation` を使って、ページ遷移後の URL を補正します。
 - `content.js`
-  - X のページ上でリンク補正、現在 URL の補正、タイトル置換を行います。
+  - X のページ上で現在 URL の補正、タイトル置換を行います。
 - `page-router.js`
-  - X 本体の SPA ルーターに近い位置で `history.pushState` / `replaceState` を補正します。
+  - X 本体の SPA ルーターに近い位置で `history.pushState` / `replaceState` を検知します。
 - `options.html`, `options.css`, `options.js`
   - タイトル置換設定のオプション画面です。
 

@@ -89,40 +89,6 @@
     window.location.replace(nextUrl);
   }
 
-  function rewriteLink(anchor) {
-    if (!anchor || typeof anchor.href !== "string") {
-      return;
-    }
-
-    const nextUrl = normalizeXUrl(anchor.href);
-    if (nextUrl) {
-      anchor.href = nextUrl;
-    }
-  }
-
-  function rewriteNearbyLink(event) {
-    const anchor = event.target && event.target.closest && event.target.closest("a[href]");
-    rewriteLink(anchor);
-  }
-
-  function rewriteVisibleLinks() {
-    document.querySelectorAll('a[href^="/"], a[href^="https://x.com/"]').forEach(rewriteLink);
-  }
-
-  function installLinkRewriter() {
-    ["pointerdown", "mousedown", "mouseover", "touchstart", "focusin", "click"].forEach((eventName) => {
-      window.addEventListener(eventName, rewriteNearbyLink, true);
-    });
-
-    const observer = new MutationObserver(rewriteVisibleLinks);
-    observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true
-    });
-
-    rewriteVisibleLinks();
-  }
-
   function rewriteTitle() {
     if (!replaceTitleSuffix || applyingTitle) {
       return;
@@ -209,13 +175,11 @@
   installRouteWatcher();
   window.addEventListener("DOMContentLoaded", () => {
     installTitleObserver();
-    installLinkRewriter();
     scheduleRouteCheck();
   });
 
   if (document.readyState !== "loading") {
     installTitleObserver();
-    installLinkRewriter();
     scheduleRouteCheck();
   }
 })();
