@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "X User All Redirect",
+  "version": "1.0.0",
+  "description": "Redirect X user profile pages to /all and optionally show /Twitter in page titles.",
+  "permissions": ["storage", "webNavigation"],
+  "host_permissions": ["https://x.com/*"],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://x.com/*"],
+      "js": ["content.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": ["https://x.com/*"],
+      "js": ["page-router.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  }
+}

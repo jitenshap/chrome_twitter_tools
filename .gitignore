@@ -1,0 +1,23 @@
+# OS / editor files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Dependency and build output directories, in case tooling is added later
+node_modules/
+dist/
+build/
+coverage/
+
+# Packaged Chrome extension archives
+*.crx
+*.pem
+*.zip
