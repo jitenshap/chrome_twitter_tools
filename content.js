@@ -95,7 +95,18 @@
       return;
     }
 
-    window.location.replace(nextUrl);
+    navigateWithinX(nextUrl);
+  }
+
+  function navigateWithinX(nextUrl) {
+    try {
+      const url = new URL(nextUrl);
+      window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      lastSeenUrl = window.location.href;
+      window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+    } catch {
+      window.location.replace(nextUrl);
+    }
   }
 
   function isSelectedTab(anchor) {

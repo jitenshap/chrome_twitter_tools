@@ -3,11 +3,8 @@
   "name": "X User All Redirect",
   "version": "1.0.0",
   "description": "Redirect X user profile pages to /all and optionally show /Twitter in page titles.",
-  "permissions": ["storage", "webNavigation"],
+  "permissions": ["storage"],
   "host_permissions": ["https://x.com/*"],
-  "background": {
-    "service_worker": "background.js"
-  },
   "content_scripts": [
     {
       "matches": ["https://x.com/*"],

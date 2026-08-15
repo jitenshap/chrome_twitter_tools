@@ -21,3 +21,6 @@ coverage/
 *.crx
 *.pem
 *.zip
+
+# Local CDP test profile
+.tmp-chrome-cdp/

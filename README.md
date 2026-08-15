@@ -10,8 +10,8 @@
   - `https://x.com/hoppou_erika/media` -> `https://x.com/hoppou_erika/media?filter=photo`
 - メディア欄は reload せず、可能な場合は X 側の写真タブを直接選択します。
   - X 側の内部タブ状態が「動画」のまま残ることを避けるためです。
-- X 内のページ遷移後に `webNavigation` と content script で補正します。
-  - URL だけでなく表示内容も切り替わるよう、明示的に再遷移します。
+- X 内のページ遷移後に content script で補正します。
+  - `history.pushState` と `popstate` で X の SPA ルーターを動かし、reload なしで表示内容も切り替えます。
 - ページタイトル末尾の ` / X` を ` / Twitter` に置き換えます。
   - `ホーム / X` -> `ホーム / Twitter`
   - この機能はオプション画面でオン/オフできます。
@@ -36,8 +36,6 @@
 
 - `storage`
   - タイトル置換のオン/オフ設定を保存するために使います。
-- `webNavigation`
-  - X 内の SPA ページ遷移を検知し、必要な URL 補正を行うために使います。
 - `https://x.com/*`
   - X 上でのみ content script と URL 補正処理を動かすために使います。
 
@@ -55,8 +53,6 @@
 
 - `manifest.json`
   - Chrome 拡張の定義ファイルです。
-- `background.js`
-  - `webNavigation` を使って、ページ遷移後の URL を補正します。
 - `content.js`
   - X のページ上で現在 URL の補正、タイトル置換を行います。
 - `page-router.js`
@@ -71,7 +67,6 @@
 構文チェックの例:
 
 ```powershell
-node --check background.js
 node --check content.js
 node --check page-router.js
 node --check options.js
