@@ -43,7 +43,7 @@
 
 拡張を読み込んだあと、以下を確認してください。
 
-- `https://x.com/MEMchro` を開くと `/all` が付く
+- `https://x.com/hoppou_erika` を開くと `/all` が付く
 - X の検索サジェストなどからユーザーページへ移動しても `/all` が付く
 - `https://x.com/hoppou_erika/media` を開くと `?filter=photo` が付く
 - X 内のリンクからメディア欄へ移動しても `?filter=photo` が付き、写真タブの表示に切り替わる
