@@ -37,6 +37,8 @@
   let routeCheckTimer = null;
   let mediaTabClickTimer = null;
   let lastMediaMenuRevealUrl = "";
+  let bypassNormalizationUrl = "";
+  let programmaticPopstate = false;
 
   function isProfileRootPath(pathname) {
     const match = pathname.match(/^\/([A-Za-z0-9_]{1,15})\/?$/);
@@ -90,6 +92,10 @@
   }
 
   function redirectCurrentPageIfNeeded() {
+    if (bypassNormalizationUrl === window.location.href) {
+      return;
+    }
+
     const nextUrl = normalizeXUrl(window.location.href);
     if (!nextUrl) {
       return;
@@ -103,7 +109,11 @@
       const url = new URL(nextUrl);
       window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
       lastSeenUrl = window.location.href;
+      programmaticPopstate = true;
       window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
+      window.setTimeout(() => {
+        programmaticPopstate = false;
+      }, 0);
     } catch {
       window.location.replace(nextUrl);
     }
@@ -214,6 +224,10 @@
     }
 
     lastSeenUrl = window.location.href;
+    if (bypassNormalizationUrl && bypassNormalizationUrl !== window.location.href) {
+      bypassNormalizationUrl = "";
+    }
+
     scheduleRouteCheck();
   }
 
@@ -227,6 +241,10 @@
     window.addEventListener("pageshow", checkForUrlChange);
     window.addEventListener("popstate", () => {
       lastSeenUrl = window.location.href;
+      if (!programmaticPopstate) {
+        bypassNormalizationUrl = window.location.href;
+      }
+
       scheduleRouteCheck();
     });
   }

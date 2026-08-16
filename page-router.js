@@ -22,5 +22,4 @@
 
   patchHistoryMethod("pushState");
   patchHistoryMethod("replaceState");
-  window.addEventListener("popstate", notifyRouteChange);
 })();
