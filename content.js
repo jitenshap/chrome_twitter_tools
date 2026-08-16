@@ -39,6 +39,7 @@
   let lastMediaMenuRevealUrl = "";
   let bypassNormalizationUrl = "";
   let programmaticPopstate = false;
+  let normalizationSuspendedUntil = 0;
 
   function isProfileRootPath(pathname) {
     const match = pathname.match(/^\/([A-Za-z0-9_]{1,15})\/?$/);
@@ -92,6 +93,10 @@
   }
 
   function redirectCurrentPageIfNeeded() {
+    if (Date.now() < normalizationSuspendedUntil) {
+      return;
+    }
+
     if (bypassNormalizationUrl === window.location.href) {
       return;
     }
@@ -107,7 +112,7 @@
   function navigateWithinX(nextUrl) {
     try {
       const url = new URL(nextUrl);
-      window.history.pushState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
       lastSeenUrl = window.location.href;
       programmaticPopstate = true;
       window.dispatchEvent(new PopStateEvent("popstate", { state: window.history.state }));
@@ -224,7 +229,11 @@
     }
 
     lastSeenUrl = window.location.href;
-    if (bypassNormalizationUrl && bypassNormalizationUrl !== window.location.href) {
+    if (
+      bypassNormalizationUrl &&
+      bypassNormalizationUrl !== window.location.href &&
+      Date.now() >= normalizationSuspendedUntil
+    ) {
       bypassNormalizationUrl = "";
     }
 
@@ -243,6 +252,7 @@
       lastSeenUrl = window.location.href;
       if (!programmaticPopstate) {
         bypassNormalizationUrl = window.location.href;
+        normalizationSuspendedUntil = Date.now() + 2000;
       }
 
       scheduleRouteCheck();
