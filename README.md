@@ -5,7 +5,7 @@
 ## 主な機能
 
 - ユーザーページ直下を `/all` 付きで開きます。
-  - `https://x.com/MEMchro` -> `https://x.com/MEMchro/all`
+  - `https://x.com/hoppou_erika` -> `https://x.com/hoppou_erika/all`
 - メディア欄に `filter=photo` を付与します。
   - `https://x.com/hoppou_erika/media` -> `https://x.com/hoppou_erika/media?filter=photo`
 - メディア欄は reload せず、可能な場合は X 側の写真タブを直接選択します。
