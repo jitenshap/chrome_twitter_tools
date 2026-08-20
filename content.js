@@ -92,6 +92,17 @@
     return url.hostname === "x.com" && isProfileMediaPath(url.pathname) && url.searchParams.get("filter") === MEDIA_FILTER_VALUE;
   }
 
+  function isMediaUrl(rawUrl) {
+    const url = new URL(rawUrl, window.location.href);
+    return url.hostname === "x.com" && isProfileMediaPath(url.pathname);
+  }
+
+  function suspendMediaNormalizationFor(rawUrl) {
+    const url = new URL(rawUrl, window.location.href);
+    bypassNormalizationUrl = url.toString();
+    normalizationSuspendedUntil = Date.now() + 2000;
+  }
+
   function redirectCurrentPageIfNeeded() {
     if (Date.now() < normalizationSuspendedUntil) {
       return;
@@ -129,6 +140,10 @@
   }
 
   function selectPhotoMediaTabIfNeeded() {
+    if (bypassNormalizationUrl === window.location.href || Date.now() < normalizationSuspendedUntil) {
+      return;
+    }
+
     if (!isPhotoMediaUrl(window.location.href)) {
       lastMediaMenuRevealUrl = "";
       return;
@@ -223,6 +238,21 @@
     }, 100);
   }
 
+  function handleManualMediaTabSelection(event) {
+    const target = event.target;
+    const anchor = target && target.closest && target.closest("a[href]");
+    if (!anchor || !isPhotoMediaUrl(window.location.href) || !isMediaUrl(anchor.href)) {
+      return;
+    }
+
+    const targetUrl = new URL(anchor.href);
+    if (targetUrl.searchParams.get("filter") === MEDIA_FILTER_VALUE) {
+      return;
+    }
+
+    suspendMediaNormalizationFor(targetUrl.toString());
+  }
+
   function checkForUrlChange() {
     if (lastSeenUrl === window.location.href) {
       return;
@@ -242,6 +272,9 @@
 
   function installRouteWatcher() {
     window.setInterval(checkForUrlChange, 250);
+    ["pointerdown", "mousedown", "touchstart", "click"].forEach((eventName) => {
+      window.addEventListener(eventName, handleManualMediaTabSelection, true);
+    });
     window.addEventListener("x-user-all-routechange", () => {
       lastSeenUrl = window.location.href;
       scheduleRouteCheck();
