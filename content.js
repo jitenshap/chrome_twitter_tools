@@ -40,6 +40,7 @@
   let bypassNormalizationUrl = "";
   let programmaticPopstate = false;
   let normalizationSuspendedUntil = 0;
+  let manualVideoMediaProfile = "";
 
   function isProfileRootPath(pathname) {
     const match = pathname.match(/^\/([A-Za-z0-9_]{1,15})\/?$/);
@@ -68,6 +69,25 @@
     return !RESERVED_PATHS.has(match[1].toLowerCase());
   }
 
+  function profileNameFromMediaPath(pathname) {
+    const match = pathname.match(/^\/([A-Za-z0-9_]{1,15})\/media\/?$/);
+    if (!match || RESERVED_PATHS.has(match[1].toLowerCase())) {
+      return "";
+    }
+
+    return match[1].toLowerCase();
+  }
+
+  function isManualVideoMediaUrl(rawUrl) {
+    const url = new URL(rawUrl, window.location.href);
+    const profileName = profileNameFromMediaPath(url.pathname);
+    return Boolean(
+      profileName &&
+      profileName === manualVideoMediaProfile &&
+      url.searchParams.get("filter") !== MEDIA_FILTER_VALUE
+    );
+  }
+
   function normalizeXUrl(rawUrl) {
     const url = new URL(rawUrl, window.location.href);
     if (url.hostname !== "x.com") {
@@ -79,7 +99,11 @@
       return url.toString();
     }
 
-    if (isProfileMediaPath(url.pathname) && url.searchParams.get("filter") !== MEDIA_FILTER_VALUE) {
+    if (
+      isProfileMediaPath(url.pathname) &&
+      url.searchParams.get("filter") !== MEDIA_FILTER_VALUE &&
+      !isManualVideoMediaUrl(url.toString())
+    ) {
       url.searchParams.set("filter", MEDIA_FILTER_VALUE);
       return url.toString();
     }
@@ -101,6 +125,7 @@
     const url = new URL(rawUrl, window.location.href);
     bypassNormalizationUrl = url.toString();
     normalizationSuspendedUntil = Date.now() + 2000;
+    manualVideoMediaProfile = profileNameFromMediaPath(url.pathname);
   }
 
   function redirectCurrentPageIfNeeded() {
@@ -141,6 +166,11 @@
 
   function selectPhotoMediaTabIfNeeded() {
     if (bypassNormalizationUrl === window.location.href || Date.now() < normalizationSuspendedUntil) {
+      return;
+    }
+
+    if (isManualVideoMediaUrl(window.location.href)) {
+      lastMediaMenuRevealUrl = "";
       return;
     }
 
@@ -258,7 +288,10 @@
       return;
     }
 
+    const previousUrl = lastSeenUrl;
     lastSeenUrl = window.location.href;
+    updateManualMediaPreferenceFromTransition(previousUrl, window.location.href);
+    updateManualMediaPreference();
     if (
       bypassNormalizationUrl &&
       bypassNormalizationUrl !== window.location.href &&
@@ -270,14 +303,29 @@
     scheduleRouteCheck();
   }
 
+  function updateManualMediaPreferenceFromTransition(previousUrl, currentUrl) {
+    if (!isPhotoMediaUrl(previousUrl) || !isMediaUrl(currentUrl) || isPhotoMediaUrl(currentUrl)) {
+      return;
+    }
+
+    suspendMediaNormalizationFor(currentUrl);
+  }
+
+  function updateManualMediaPreference() {
+    const url = new URL(window.location.href);
+    const profileName = profileNameFromMediaPath(url.pathname);
+    if (!profileName || url.searchParams.get("filter") === MEDIA_FILTER_VALUE) {
+      manualVideoMediaProfile = "";
+    }
+  }
+
   function installRouteWatcher() {
     window.setInterval(checkForUrlChange, 250);
     ["pointerdown", "mousedown", "touchstart", "click"].forEach((eventName) => {
       window.addEventListener(eventName, handleManualMediaTabSelection, true);
     });
     window.addEventListener("x-user-all-routechange", () => {
-      lastSeenUrl = window.location.href;
-      scheduleRouteCheck();
+      checkForUrlChange();
     });
     window.addEventListener("focus", checkForUrlChange);
     window.addEventListener("pageshow", checkForUrlChange);
